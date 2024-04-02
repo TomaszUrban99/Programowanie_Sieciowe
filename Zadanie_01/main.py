@@ -2,37 +2,15 @@ import numpy as np
 import pandas as pd
 import random as rd
 from Perceptron import Perceptron
-
-def generate_learn_check ( list_learn, list_test, list_input):
-
-    input_count = len(list_input)
-
-    list_learn_count = int(0.8*len(list_input))
-    
-    in_list = 0
-
-    # Generate random sequence fro list_input
-    for i in range(0,5):
-        rd.shuffle(list_input)
-
-    while in_list < list_learn_count:
-        
-        # Random element from input list
-        list_learn.append(list_input.pop())
-        in_list += 1
-
-    print(in_list)
-
-    for i in list_input:
-        list_test.append(list_input.pop())
-
-    
+from Adaline import Adaline    
+from function_auxillary import generate_learn_check
 
 # Read values from file
 data = pd.read_csv("iris.data", header=None)
 
-# Read data from Iris Data
+# Read data from Iris Data (iris.data)
 y = data.iloc[0:, 4].values
+X2 = data.iloc[0:,0:].values
 
 # Empty lists of IRIS types
 iris_lists = []
@@ -42,14 +20,12 @@ for i in y:
     if i not in iris_lists:
         iris_lists.append(i)
 
-# Iris classificators
-iris_classificators = []
-
-X2 = data.iloc[0:,0:].values
+iris_lists.pop()
 
 list_of_list = []
 
-# Count elements of each class
+# Split input data
+# based on Iris types
 for i in range(0,len(iris_lists)):
     first_list = []
     for j in X2:
@@ -57,22 +33,22 @@ for i in range(0,len(iris_lists)):
             first_list.append(j)
     list_of_list.append(first_list)
 
+# Lists for storing elements for learning and checking
 list_learn = []
 list_check = []
 
+# Generate learn and check sets
 for i in range(0,len(iris_lists)):
     print(len(list_of_list[i]))
     generate_learn_check(list_learn, list_check, list_of_list[i])
 
+# Transform lists
 
-# Read data from Iris Data
 y1 = []
-    
 for i in list_learn:
     y1.append(i[4])
 
 X1 = []
-
 for i in list_learn:
     X1.append(i[0:4])
 
@@ -81,36 +57,54 @@ for i in list_learn:
 import matplotlib.pyplot as plt
 from mlxtend.plotting import plot_decision_regions
 
+# Lists for storing classificators
+iris_classificators_perceptron = []
+iris_classificators_adaline = []
+
 # Classification for each flower
 for i in iris_lists:
     
+    print(i)
+
     y = np.array(y1)
     y = np.where ( y == i, 1, -1)
     
+    print(y)
+
     X = np.array(X1)
 
-    ppn = Perceptron( eta=0.1, epochs=25 )
-    
+    # PERCEPTRON
+    ppn = Perceptron( eta=0.0001, epochs=1000 ) 
     ppn.train(X,y)
+    iris_classificators_perceptron.append(ppn)
 
-    iris_classificators.append(ppn.w_)
+    # ADALINE
+    ada = Adaline ( eta = 0.0001, epochs=1000 )
+    ada.train(X,y)
+    iris_classificators_adaline.append(ada)
 
+    # Print weight vector for each method
+    print ("Perceptron:")
     print(ppn.w_)
+    print ("Adaline:")
+    print(ada.w_)
 
 
-# Test input
-
-    
 for i in list_check:
 
-    print ( "Klasyfikacja " + str(i[4]))
+  print ( "Klasyfikacja " + str(i[4]))
 
-    max_value = 0
-    inp = np.array(i)
+  inp = np.array(i)
 
-    for j in iris_classificators:
-        weight = np.array(j)
-        cl = np.dot(inp[0:4], weight[1:])
-        print(cl)
-        
-        
+  print ( "Perceptron: ")
+  
+  for j in iris_classificators_perceptron:
+      cl = np.dot(inp[0:4], j.w_[1:]) + j.w_[0]
+      print(cl)
+
+  print ( "Adaline: ")
+      
+  for j in iris_classificators_adaline:
+      cl = np.dot(inp[0:4], j.w_[1:]) + j.w_[0]
+      print(cl)
+      
